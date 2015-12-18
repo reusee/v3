@@ -24,8 +24,17 @@ export class Component {
   constructor(state) {
     this.state = state;
     this.name = this.constructor.name;
-    this.thunk = new Thunk((state) => {
-      return h(this.name, {}, [this.render(state)]);
+    this.thunk = this.newThunk();
+  }
+
+  newThunk() {
+    return new Thunk((state) => {
+      let Hook = function(){}
+      Hook.prototype.hook = this.afterRender;
+      let vnode = h(this.name, {
+        'after-render': new Hook(),
+      }, [this.render(state)]);
+      return vnode;
     }, this.state, this.shouldUpdate);
   }
 
@@ -40,12 +49,13 @@ export class Component {
 
   set(newState) {
     this.state = newState;
-    let newThunk = new Thunk((state) => {
-      return h(this.name, {}, [this.render(state)]);
-    }, this.state, this.shouldUpdate);
+    let newThunk = this.newThunk();
     let patches = diff(this.thunk, newThunk);
     this.node = patch(this.node, patches);
-    this.thunk = newThunk
+    this.thunk = newThunk;
+  }
+
+  afterRender(node, propertyName, previousState) {
   }
 
   shouldUpdate(previousState) {

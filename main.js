@@ -10,7 +10,7 @@ class App extends Component {
           ...state.texts[state.text_index],
         }),
         e(Button, {
-          text: state.button_text,
+          button_text: state.button_text,
         }),
     ]);
   }
@@ -39,7 +39,7 @@ class Button extends Component {
         store.dispatch({type: 'tick'});
       },
     }, [
-      state.text,
+      state.button_text,
     ]);
   }
 }

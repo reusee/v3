@@ -6,17 +6,17 @@ class App extends Component {
 
   render(state) {
     return e('div', {}, [
-        e(Label, {
+        e(MyLabel, {
           ...state.texts[state.text_index],
         }),
-        e(Button, {
+        e(MyButton, {
           button_text: state.button_text,
         }),
     ]);
   }
 }
 
-class Label extends Component {
+class MyLabel extends Component {
   name() { return 'Label' }
 
   render(state) {
@@ -30,7 +30,7 @@ class Label extends Component {
   }
 }
 
-class Button extends Component {
+class MyButton extends Component {
   name() { return 'Button' }
 
   render(state) {

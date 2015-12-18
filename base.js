@@ -31,7 +31,8 @@ export class Component {
   }
 
   bind(root) {
-    this.node = createElement(this.thunk);
+    let tree = h(this.constructor.name, {}, [this.thunk]);
+    this.node = createElement(tree);
     root.appendChild(this.node);
   }
 
@@ -82,7 +83,9 @@ export function e(selector, properties, children) {
   case 'string':
     return h(selector, properties, children);
   default:
-    return new selector(properties).thunk;
+    let instance = new selector(properties);
+    let name = instance.constructor.name;
+    return h(name, {}, [instance.thunk]);
   }
 }
 

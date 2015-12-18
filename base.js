@@ -87,3 +87,8 @@ export function e(selector, properties, children) {
   }
 }
 
+export var none = h('div', { style: { display: 'none' } });
+
+export function div(...subs) {
+  return h('div', {}, [...subs]);
+}

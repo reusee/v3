@@ -30,7 +30,7 @@ export class Component {
   newThunk() {
     return new Thunk((state) => {
       let Hook = function(){}
-      Hook.prototype.hook = this.afterRender;
+      Hook.prototype.hook = this.afterRender.bind(this);
       let vnode = h(this.name, {
         'after-render': new Hook(),
       }, [this.render(state)]);

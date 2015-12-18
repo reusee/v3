@@ -22,7 +22,7 @@ class Thunk {
 
 export class Component {
   constructor(state) {
-    this.state = state || {};
+    this.state = state;
     this.name = this.constructor.name;
     this.thunk = new Thunk((state) => {
       return h(this.name, {}, [this.render(state)]);

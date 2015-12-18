@@ -23,7 +23,10 @@ class Thunk {
 export class Component {
   constructor(state) {
     this.state = state || {};
-    this.thunk = new Thunk(this.render, this.state, this.shouldUpdate);
+    this.name = this.constructor.name;
+    this.thunk = new Thunk((state) => {
+      return h(this.name, {}, [this.render(state)]);
+    }, this.state, this.shouldUpdate);
   }
 
   render(state) {
@@ -31,14 +34,15 @@ export class Component {
   }
 
   bind(root) {
-    let tree = h(this.constructor.name, {}, [this.thunk]);
-    this.node = createElement(tree);
+    this.node = createElement(this.thunk);
     root.appendChild(this.node);
   }
 
   set(newState) {
     this.state = newState;
-    let newThunk = new Thunk(this.render, this.state, this.shouldUpdate);
+    let newThunk = new Thunk((state) => {
+      return h(this.name, {}, [this.render(state)]);
+    }, this.state, this.shouldUpdate);
     let patches = diff(this.thunk, newThunk);
     this.node = patch(this.node, patches);
     this.thunk = newThunk
@@ -83,9 +87,7 @@ export function e(selector, properties, children) {
   case 'string':
     return h(selector, properties, children);
   default:
-    let instance = new selector(properties);
-    let name = instance.constructor.name;
-    return h(name, {}, [instance.thunk]);
+    return new selector(properties).thunk;
   }
 }
 

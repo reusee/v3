@@ -76,10 +76,6 @@ export class Component {
       return !(previousState === this.state);
     }
   }
-
-  name() {
-    return 'Component'
-  }
 }
 
 export function e(selector, properties, children) {

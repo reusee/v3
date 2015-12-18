@@ -2,8 +2,6 @@ import {createStore} from 'redux'
 import {e, Component} from './base'
 
 class App extends Component {
-  name() { return 'App' }
-
   render(state) {
     return e('div', {}, [
         e(MyLabel, {
@@ -17,8 +15,6 @@ class App extends Component {
 }
 
 class MyLabel extends Component {
-  name() { return 'Label' }
-
   render(state) {
     return e('p', {
       style: {
@@ -31,8 +27,6 @@ class MyLabel extends Component {
 }
 
 class MyButton extends Component {
-  name() { return 'Button' }
-
   render(state) {
     return e('button', {
       onclick: (ev) => {

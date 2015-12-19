@@ -38,7 +38,7 @@ export class Component {
         'node-changed': new Hook(),
       }, [this.render(state)]);
       return vnode;
-    }, state, this.shouldUpdate);
+    }, state, this.shouldUpdate.bind(this));
   }
 
   render(state) {
@@ -63,33 +63,48 @@ export class Component {
     }
   }
 
+  boundedEqual(a, b, n) {
+    if (a === b) {
+      return true;
+    }
+    if (n == 0) {
+      return a === b;
+    }
+    let aType = typeof a;
+    let bType = typeof b;
+    if (aType != bType) {
+      return false;
+    }
+    switch (aType) {
+    case 'object':
+      let aKeys = Object.keys(a);
+      let bKeys = Object.keys(b);
+      if (aKeys.length != bKeys.length) {
+        return false;
+      }
+      let len = aKeys.length;
+      for (let i = 0; i < len; i++) {
+        let key = aKeys[i];
+        if (!this.boundedEqual(a[key], b[key], n - 1)) {
+          //console.log(this.constructor.name, 'diff at', key);
+          return false;
+        }
+      }
+      return true;
+    default:
+      return this.boundedEqual(a, b, n - 1);
+    }
+  }
+
   shouldUpdate(state, previousState) {
+    if (previousState === undefined && state === undefined) {
+      // no state
+      return false;
+    }
     if (!previousState || !state) {
       return true;
     }
-    let previousType = typeof previousState;
-    let currentType = typeof state;
-    if (previousType != currentType) {
-      return true;
-    }
-    switch (currentType) {
-    case 'object': // shallow check
-      let previousKeys = Object.keys(previousState);
-      let currentKeys = Object.keys(state);
-      if (previousKeys.length != currentKeys.length) {
-        return true;
-      }
-      let len = currentKeys.length;
-      for (let i = 0; i < len; i++) {
-        let key = currentKeys[i];
-        if (previousState[key] !== state[key]) {
-          return true;
-        }
-      }
-      return false;
-    default:
-      return !(previousState === state);
-    }
+    return !this.boundedEqual(state, previousState, 3);
   }
 }
 

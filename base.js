@@ -30,12 +30,12 @@ export class Component {
   newThunk(state) {
     return new Thunk((state) => {
       let Hook = function(){}
-      Hook.prototype.hook = (node) => {
-        this.node = node;
-        this.nodeChanged(node);
+      Hook.prototype.hook = (element) => {
+        this.element = element;
+        this.elementChanged(element);
       };
       let vnode = h(this.constructor.name, {
-        'node-changed': new Hook(),
+        'element-changed': new Hook(),
       }, [this.render(state)]);
       return vnode;
     }, state, this.shouldUpdate.bind(this));
@@ -46,20 +46,20 @@ export class Component {
   }
 
   bind(parent) {
-    this.node = createElement(this.thunk);
-    parent.appendChild(this.node);
+    this.element = createElement(this.thunk);
+    parent.appendChild(this.element);
   }
 
   set(newState) {
     let newThunk = this.newThunk(newState);
     let patches = diff(this.thunk, newThunk);
-    this.node = patch(this.node, patches);
+    this.element = patch(this.element, patches);
     this.thunk = newThunk;
   }
 
-  nodeChanged(node) {
+  elementChanged(element) {
     if (debug) {
-      console.log('node changed', this.constructor.name);
+      console.log('element changed', this.constructor.name);
     }
   }
 

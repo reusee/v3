@@ -3,7 +3,7 @@ import diff from 'virtual-dom/diff'
 import patch from 'virtual-dom/patch'
 import createElement from 'virtual-dom/create-element'
 
-let debug = true;
+let debug = false;
 
 class Thunk {
   constructor(renderFn, state, shouldUpdate) {
@@ -124,11 +124,30 @@ export function div(...subs) {
   return h('div', {}, [...subs]);
 }
 
-export function update(obj, path, value) {
-  if (path.length == 0) {
-    return value;
+export function merge(a, b) {
+  let aType = typeof a;
+  let bType = typeof b;
+  if (aType == 'object' && bType == 'object') {
+    let obj = {};
+    for (let key in a) {
+      if (b[key]) {
+        obj[key] = merge(a[key], b[key]);
+        delete b[key];
+      } else if (b['>_<']) {
+        obj[key] = merge(a[key], b['>_<']);
+      } else {
+        obj[key] = a[key];
+      }
+    }
+    for (let key in b) {
+      if (key == '>_<') {
+        continue;
+      }
+      obj[key] = b[key];
+    }
+    return obj;
+  } else {
+    return b;
   }
-  return {...obj,
-    [path[0]]: update(obj[path[0]], path.slice(1), value),
-  };
 }
+

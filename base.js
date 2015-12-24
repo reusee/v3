@@ -118,7 +118,17 @@ export function e(selector, properties, children) {
 }
 
 export var none = h('div', { style: { display: 'none' } });
+export var clear = h('div', { style: { clear: 'both' } });
 
 export function div(...subs) {
   return h('div', {}, [...subs]);
+}
+
+export function update(obj, path, value) {
+  if (path.length == 0) {
+    return value;
+  }
+  return {...obj,
+    [path[0]]: update(obj[path[0]], path.slice(1), value),
+  };
 }

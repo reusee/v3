@@ -86,7 +86,6 @@ export class Component {
       for (let i = 0; i < len; i++) {
         let key = aKeys[i];
         if (!this.boundedEqual(a[key], b[key], n - 1)) {
-          //console.log(this.constructor.name, 'diff at', key);
           return false;
         }
       }
@@ -104,7 +103,7 @@ export class Component {
     if (!previousState || !state) {
       return true;
     }
-    return !this.boundedEqual(state, previousState, 3);
+    return !this.boundedEqual(state, previousState, 2);
   }
 }
 
@@ -129,21 +128,24 @@ export function merge(a, b) {
   let bType = typeof b;
   if (aType == 'object' && bType == 'object') {
     let obj = {};
-    for (let key in a) {
-      if (b[key]) {
-        obj[key] = merge(a[key], b[key]);
-        delete b[key];
-      } else if (b['>_<']) {
+    if (b['>_<']) {
+      for (let key in a) {
         obj[key] = merge(a[key], b['>_<']);
-      } else {
+      }
+    } else {
+      for (let key in b) {
+        if (a[key]) {
+          obj[key] = merge(a[key], b[key]);
+        } else {
+          obj[key] = b[key];
+        }
+      }
+      for (let key in a) {
+        if (key in obj) {
+          continue
+        }
         obj[key] = a[key];
       }
-    }
-    for (let key in b) {
-      if (key == '>_<') {
-        continue;
-      }
-      obj[key] = b[key];
     }
     return obj;
   } else {
@@ -151,3 +153,48 @@ export function merge(a, b) {
   }
 }
 
+/*
+console.log(merge({
+  categories: {
+    1: {
+      dishes: {
+        1: {
+          selected: 5,
+        },
+      },
+      weekly_dishes: {
+        1: {
+          selected: 5,
+        },
+      },
+    },
+    2: {
+      dishes: {
+        1: {
+          selected: 5,
+        },
+      },
+      weekly_dishes: {
+        1: {
+          selected: 5,
+        },
+      },
+    },
+  },
+}, {
+  categories: {
+    '>_<': {
+      dishes: {
+        '>_<': {
+          selected: 0,
+        },
+      },
+      weekly_dishes: {
+        '>_<': {
+          selected: 0,
+        },
+      },
+    },
+  },
+}));
+*/

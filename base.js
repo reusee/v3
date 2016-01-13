@@ -6,16 +6,20 @@ import createElement from 'virtual-dom/create-element'
 let debug = false;
 
 class Thunk {
-  constructor(renderFn, state, shouldUpdate) {
+  constructor(renderFn, state, shouldUpdate, name) {
     this.type = 'Thunk';
     this.renderFn = renderFn;
     this.state = state;
     this.shouldUpdate = shouldUpdate;
+    this.name = name;
   }
 
   render(previous) {
     var previousState = previous ? previous.state : null;
     if (this.shouldUpdate(this.state, previousState)) {
+      if (debug) {
+        console.log('call render of ', this.name);
+      }
       return this.renderFn(this.state);
     }
     return previous.vnode;
@@ -38,9 +42,10 @@ export class Component {
         'element-changed': new Hook(),
       }, [this.render(state)]);
       return vnode;
-    }, state, this.shouldUpdate.bind(this));
+    }, state, this.shouldUpdate.bind(this), this.constructor.name);
   }
 
+  // abstract
   render(state) {
     return h();
   }
@@ -50,13 +55,20 @@ export class Component {
     parent.appendChild(this.element);
   }
 
-  set(newState) {
+  // abstract
+  reduce(state, type, data) {
+    return state;
+  }
+
+  emit(type, data) {
+    let newState = this.reduce(this.thunk.state, type, data);
     let newThunk = this.newThunk(newState);
     let patches = diff(this.thunk, newThunk);
     this.element = patch(this.element, patches);
     this.thunk = newThunk;
   }
 
+  // abstract
   elementChanged(element) {
     if (debug) {
       console.log('element changed', this.constructor.name);
@@ -95,6 +107,7 @@ export class Component {
     }
   }
 
+  // abstract
   shouldUpdate(state, previousState) {
     if (previousState === undefined && state === undefined) {
       // no state

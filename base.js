@@ -98,6 +98,9 @@ export class Component {
       for (let i = 0; i < len; i++) {
         let key = aKeys[i];
         if (!this.boundedEqual(a[key], b[key], n - 1)) {
+          if (key.slice(0, 1) == 'on' && typeof a[key] == 'function' && typeof b[key] == 'function') {
+            continue; // skip event handlers
+          }
           return false;
         }
       }

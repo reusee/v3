@@ -55,17 +55,15 @@ export class Component {
     parent.appendChild(this.element);
   }
 
-  // abstract
-  reduce(state, type, data) {
-    return state;
-  }
-
-  emit(type, data) {
-    let newState = this.reduce(this.thunk.state, type, data);
+  setState(newState) {
     let newThunk = this.newThunk(newState);
     let patches = diff(this.thunk, newThunk);
     this.element = patch(this.element, patches);
     this.thunk = newThunk;
+  }
+
+  setStore(store) {
+    store.setComponent(this);
   }
 
   // abstract
@@ -120,6 +118,24 @@ export class Component {
       return true;
     }
     return !this.boundedEqual(state, previousState, 2);
+  }
+}
+
+export class Store {
+  constructor(initState, eventHandler) {
+    this.state = initState;
+    this.eventHandler = eventHandler;
+  }
+
+  emit(type, data) {
+    this.state = this.eventHandler(this.state, type, data);
+    if (this.component) {
+      this.component.setState(this.state);
+    }
+  }
+
+  setComponent(component) {
+    this.component = component;
   }
 }
 

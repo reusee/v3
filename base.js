@@ -151,9 +151,16 @@ export function e(selector, properties, children) {
 export var none = h('div', { style: { display: 'none' } });
 export var clear = h('div', { style: { clear: 'both' } });
 
-export function div(...subs) {
-  return h('div', {}, [...subs]);
-}
+export let div = (args, subs) => h('div', args, subs);
+export let span = (args, subs) => h('span', args, subs);
+export let ul = (args, subs) => h('ul', args, subs);
+export let li = (args, subs) => h('li', args, subs);
+export let form = (args, subs) => h('form', args, subs);
+export let label = (args, subs) => h('label', args, subs);
+export let input = (args, subs) => h('input', args, subs);
+export let select = (args, subs) => h('select', args, subs);
+export let option = (args, subs) => h('option', args, subs);
+export let img = (args, subs) => h('img', args, subs);
 
 export function merge(a, b) {
   let aType = typeof a;

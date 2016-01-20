@@ -29,6 +29,15 @@ class Thunk {
 export class Component {
   constructor(state) {
     this.thunk = this.newThunk(state);
+    this._skip_keys = {};
+    let keys = this.skipKeys();
+    for (let i = 0; i < keys.length; i++) {
+      this._skip_keys[keys[i]] = true;
+    }
+  }
+
+  skipKeys() {
+    return [];
   }
 
   newThunk(state) {
@@ -73,6 +82,41 @@ export class Component {
     }
   }
 
+  boundedEqual(a, b, n) {
+    if (a === b) {
+      return true;
+    }
+    if (n == 0) {
+      return a === b;
+    }
+    let aType = typeof a;
+    let bType = typeof b;
+    if (aType != bType) {
+      return false;
+    }
+    switch (aType) {
+    case 'object':
+      let aKeys = Object.keys(a);
+      let bKeys = Object.keys(b);
+      if (aKeys.length != bKeys.length) {
+        return false;
+      }
+      let len = aKeys.length;
+      for (let i = 0; i < len; i++) {
+        let key = aKeys[i];
+        if (!this.boundedEqual(a[key], b[key], n - 1)) {
+          if (key.slice(0, 1) == 'on' && typeof a[key] == 'function' && typeof b[key] == 'function') {
+            continue; // skip event handlers
+          }
+          return false;
+        }
+      }
+      return true;
+    default:
+      return this.boundedEqual(a, b, n - 1);
+    }
+  }
+
   // abstract
   shouldUpdate(state, previousState) {
     if (previousState === undefined && state === undefined) {
@@ -90,6 +134,9 @@ export class Component {
     }
     for (let i = 0; i < keys.length; i++) {
       let key = keys[i];
+      if (this._skip_keys[key]) {
+        continue;
+      }
       let value = state[key];
       let prevValue = previousState[key];
       if (value !== prevValue) {
@@ -101,6 +148,13 @@ export class Component {
         if ((value !== undefined && value._skip_in_should_update_check) 
             || (prevValue !== undefined && prevValue._skip_in_should_update_check)) {
           continue;
+        }
+        // do deep compare
+        if ((value !== undefined && value._do_deep_compare) 
+            || (prevValue !== undefined && prevValue._do_deep_compare)) {
+          if (this.boundedEqual(value, prevValue, -1)) {
+            continue
+          }
         }
         if (debug) {
           console.log('key changed:', key);
@@ -114,6 +168,13 @@ export class Component {
 
 export function constant(obj) {
   return Object.defineProperty(obj, '_skip_in_should_update_check', {
+    __proto__: null,
+    value: true,
+  });
+}
+
+export function computed(obj) {
+  return Object.defineProperty(obj, '_do_deep_compare', {
     __proto__: null,
     value: true,
   });

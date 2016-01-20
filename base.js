@@ -126,7 +126,7 @@ export class Component {
     if (!previousState || !state) {
       return true;
     }
-    // 不需要更深层的比较，因为如果深层状态改变，一定会反映到最上层，所以只需要浅比较
+
     let keys = Object.keys(state);
     let prevKeys = Object.keys(previousState);
     if (keys.length != prevKeys.length) {

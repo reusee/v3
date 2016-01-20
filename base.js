@@ -98,7 +98,8 @@ export class Component {
           continue;
         }
         // skip explicitly specified
-        if (value._skip_in_should_update_check || prevValue._skip_in_should_update_check) {
+        if ((value !== undefined && value._skip_in_should_update_check) 
+            || (prevValue !== undefined && prevValue._skip_in_should_update_check)) {
           continue;
         }
         if (debug) {

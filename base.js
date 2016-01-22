@@ -121,16 +121,18 @@ export class Component {
   shouldUpdate(state, previousState) {
     if (previousState === undefined && state === undefined) {
       // no state
-      return false;
+      return true;
     }
     if (!previousState || !state) {
       return true;
     }
-
     let keys = Object.keys(state);
     let prevKeys = Object.keys(previousState);
     if (keys.length != prevKeys.length) {
       return true;
+    }
+    if (state.style) {
+      state.state = computed(state.style);
     }
     for (let i = 0; i < keys.length; i++) {
       let key = keys[i];

@@ -16,6 +16,9 @@ class Thunk {
 
   render(previous) {
     var previousState = previous ? previous.state : null;
+    if (this.state === undefined && previousState === undefined && previous.vnode) {
+      return previous.vnode;
+    }
     if (this.shouldUpdate(this.state, previousState)) {
       if (debug) {
         console.log('call render of ', this.name);

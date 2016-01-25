@@ -50,7 +50,7 @@ export class Component {
         this.element = element;
         this.elementChanged(element);
       };
-      let vnode = h(this.constructor.name, {
+      let vnode = h('v3-' + this.constructor.name, {
         'element-changed': new Hook(),
       }, [this.render(state)]);
       return vnode;

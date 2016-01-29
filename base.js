@@ -288,6 +288,15 @@ export function op_insert(elem, index = 0) {
   });
 }
 
+export function op_remove(index) {
+  return Object.defineProperty({
+    index: index,
+  }, '_op_remove', {
+    __proto__: null,
+    value: true,
+  });
+}
+
 export function op_call(cb) {
   return Object.defineProperty({
     cb: cb,
@@ -303,6 +312,8 @@ function merge_value(left, right) {
     return insert(left, right.elem, right.index);
   } else if (right._op_call) {
     return right.cb(left);
+  } else if (right._op_remove) {
+    return remove(left, right.index);
   }
   return merge(left, right);
 }
@@ -315,3 +326,9 @@ export function insert(ary, elem, index = 0) {
   ];
 }
 
+export function remove(ary, index) {
+  return [
+    ...ary.slice(0, index),
+    ...ary.slice(index + 1),
+  ];
+}

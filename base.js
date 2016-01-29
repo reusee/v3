@@ -288,10 +288,21 @@ export function op_insert(elem, index = 0) {
   });
 }
 
+export function op_call(cb) {
+  return Object.defineProperty({
+    cb: cb,
+  }, '_op_call', {
+    __proto__: null,
+    value: true,
+  });
+}
+
 function merge_value(left, right) {
   if (right._op_insert) {
     // insert to left
     return insert(left, right.elem, right.index);
+  } else if (right._op_call) {
+    return right.cb(left);
   }
   return merge(left, right);
 }

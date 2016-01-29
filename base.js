@@ -225,24 +225,35 @@ export let input = (args, subs) => h('input', args, subs);
 export let select = (args, subs) => h('select', args, subs);
 export let option = (args, subs) => h('option', args, subs);
 export let img = (args, subs) => h('img', args, subs);
+export let button = (args, subs) => h('button', args, subs);
 
 export function merge(a, b) {
   let aType = typeof a;
   let bType = typeof b;
+  if (Array.isArray(a)) {
+    aType = 'array';
+  }
+  if (Array.isArray(b)) {
+    bType = 'array';
+  }
   if (aType == 'object' && bType == 'object') {
+    // the new object
     let obj = {};
     if (b['>_<']) {
+      // wildcard update
       for (let key in a) {
-        obj[key] = merge(a[key], b['>_<']);
+        obj[key] = merge_value(a[key], b['>_<']);
       }
     } else {
+      // merge
       for (let key in b) {
         if (a[key]) {
-          obj[key] = merge(a[key], b[key]);
+          obj[key] = merge_value(a[key], b[key]); 
         } else {
           obj[key] = b[key];
         }
       }
+      // copy keys in a but not in b
       for (let key in a) {
         if (key in obj) {
           continue
@@ -251,8 +262,45 @@ export function merge(a, b) {
       }
     }
     return obj;
+  } else if (aType == 'array' && bType == 'object') {
+    // the new object
+    let obj = [];
+    for (let i = 0; i < a.length; i++) {
+      if (b[i]) {
+        obj.push(merge(a[i], b[i]));
+      } else {
+        obj.push(a[i]);
+      }
+    }
+    return obj;
   } else {
     return b;
   }
+}
+
+export function op_insert(elem, index = 0) {
+  return Object.defineProperty({
+    elem: elem,
+    index: index,
+  }, '_op_insert', {
+    __proto__: null,
+    value: true,
+  });
+}
+
+function merge_value(left, right) {
+  if (right._op_insert) {
+    // insert to left
+    return insert(left, right.elem, right.index);
+  }
+  return merge(left, right);
+}
+
+export function insert(ary, elem, index = 0) {
+  return [
+    ...ary.slice(0, index),
+    elem,
+    ...ary.slice(index),
+  ];
 }
 

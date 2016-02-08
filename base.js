@@ -150,13 +150,13 @@ export class Component {
           continue;
         }
         // skip explicitly specified
-        if ((value !== undefined && value._skip_in_should_update_check) 
-            || (prevValue !== undefined && prevValue._skip_in_should_update_check)) {
+        if ((!is_none(value) && value._skip_in_should_update_check) 
+            || (!is_none(prevValue) && prevValue._skip_in_should_update_check)) {
           continue;
         }
         // do deep compare
-        if ((value !== undefined && value._do_deep_compare) 
-            || (prevValue !== undefined && prevValue._do_deep_compare)) {
+        if ((!is_none(value) && value._do_deep_compare) 
+            || (!is_none(prevValue) && prevValue._do_deep_compare)) {
           if (this.boundedEqual(value, prevValue, -1)) {
             continue
           }
@@ -169,6 +169,10 @@ export class Component {
     }
     return false;
   }
+}
+
+function is_none(o) {
+  return o === undefined || o === null;
 }
 
 export function constant(obj) {
@@ -267,7 +271,7 @@ export function merge(a, b) {
     let obj = [];
     for (let i = 0; i < a.length; i++) {
       if (b[i]) {
-        obj.push(merge(a[i], b[i]));
+        obj.push(merge_value(a[i], b[i]));
       } else {
         obj.push(a[i]);
       }

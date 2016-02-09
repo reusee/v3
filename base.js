@@ -175,6 +175,13 @@ function is_none(o) {
   return o === undefined || o === null;
 }
 
+function has_key(o, key) {
+  if (is_none(o)) {
+    return false;
+  }
+  return key in o;
+}
+
 export function constant(obj) {
   return Object.defineProperty(obj, '_skip_in_should_update_check', {
     __proto__: null,
@@ -243,7 +250,7 @@ export function merge(a, b) {
   if (aType == 'object' && bType == 'object') {
     // the new object
     let obj = {};
-    if (b['>_<']) {
+    if (has_key(b, '>_<')) {
       // wildcard update
       for (let key in a) {
         obj[key] = merge_value(a[key], b['>_<']);
@@ -251,7 +258,7 @@ export function merge(a, b) {
     } else {
       // merge
       for (let key in b) {
-        if (a[key]) {
+        if (has_key(a, key)) {
           obj[key] = merge_value(a[key], b[key]); 
         } else {
           obj[key] = b[key];
@@ -259,7 +266,7 @@ export function merge(a, b) {
       }
       // copy keys in a but not in b
       for (let key in a) {
-        if (key in obj) {
+        if (has_key(obj, key)) {
           continue
         }
         obj[key] = a[key];
@@ -270,7 +277,7 @@ export function merge(a, b) {
     // the new object
     let obj = [];
     for (let i = 0; i < a.length; i++) {
-      if (b[i]) {
+      if (has_key(b, i)) {
         obj.push(merge_value(a[i], b[i]));
       } else {
         obj.push(a[i]);
@@ -312,7 +319,9 @@ export function op_call(cb) {
 
 function merge_value(left, right) {
   if (right._op_insert) {
-    // insert to left
+    if (is_none(left)) {
+      left = [];
+    }
     return insert(left, right.elem, right.index);
   } else if (right._op_call) {
     return right.cb(left);

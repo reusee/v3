@@ -202,16 +202,23 @@ export class Store {
   }
 
   handle(state, event, data) {
+    if (debug) {
+      console.log('=state=>', state);
+      console.log('=event=>', event, data);
+    }
+    let newState = state;
     if (typeof event == 'function') {
-      let newState = event(state, data);
-      if (newState) {
-        return newState
+      let s = event(state, data);
+      if (s) {
+        newState = s;
       }
     } else if (event === undefined || event === null) {
       console.error('invalid event', data);
     }
-
-    return state
+    if (debug) {
+      console.log('=state=>', newState);
+    }
+    return newState;
   }
 
   emit(event, data) {

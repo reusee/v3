@@ -239,6 +239,7 @@ export var none = h('div', { style: { display: 'none' } });
 export var clear = h('div', { style: { clear: 'both' } });
 
 export let div = (args, subs) => h('div', args, subs);
+export let p = (args, subs) => h('p', args, subs);
 export let span = (args, subs) => h('span', args, subs);
 export let ul = (args, subs) => h('ul', args, subs);
 export let li = (args, subs) => h('li', args, subs);

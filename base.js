@@ -345,6 +345,9 @@ function merge_value(left, right) {
 }
 
 export function insert(ary, elem, index = 0) {
+  if (index < 0) {
+    index = ary.length + index + 1;
+  }
   return [
     ...ary.slice(0, index),
     elem,

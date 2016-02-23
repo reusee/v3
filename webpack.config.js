@@ -19,5 +19,16 @@ module.exports = {
   },
   devServer: {
     contentBase: __dirname,
+    port: 18080,
   }
 };
+
+if (process.env.PRO) {
+  module.exports.output.filename = 'bundle.js';
+  module.exports.plugins.push(new webpack.optimize.UglifyJsPlugin({
+    compress: {
+      warnings: false,
+    },
+  }));
+  module.exports.plugins.push(new webpack.optimize.OccurenceOrderPlugin());
+}

@@ -197,13 +197,25 @@ export function computed(obj) {
 }
 
 export class Store {
-  constructor(initState, eventHandler) {
+  constructor(initState) {
     this.state = initState;
-    this.eventHandler = eventHandler;
   }
 
-  emit(type, data) {
-    this.state = this.eventHandler(this.state, type, data);
+  handle(state, event, data) {
+    if (typeof event == 'function') {
+      let newState = event(state, data);
+      if (newState) {
+        return newState
+      }
+    } else if (event === undefined || event === null) {
+      console.error('invalid event', data);
+    }
+
+    return state
+  }
+
+  emit(event, data) {
+    this.state = this.handle(this.state, event, data);
     if (this.component) {
       this.component.setState(this.state);
     }

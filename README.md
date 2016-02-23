@@ -1,2 +1,2 @@
 # v3
-frontend framework utilizing virtual-dom, redux and immutable
+frontend framework utilizing virtual-dom

@@ -292,9 +292,12 @@ export function merge(a, b) {
   } else if (aType == 'array' && bType == 'object') {
     // the new object
     let obj = [];
+    let wildcard = b['>_<'];
     for (let i = 0; i < a.length; i++) {
       if (has_key(b, i)) {
         obj.push(merge_value(a[i], b[i]));
+      } else if (wildcard !== undefined && wildcard !== null) {
+        obj.push(merge_value(a[i], wildcard));
       } else {
         obj.push(a[i]);
       }

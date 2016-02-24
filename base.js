@@ -278,11 +278,7 @@ export function merge(a, b) {
     } else {
       // merge
       for (let key in b) {
-        if (has_key(a, key)) {
-          obj[key] = merge_value(a[key], b[key]); 
-        } else {
-          obj[key] = b[key];
-        }
+        obj[key] = merge_value(a[key], b[key]); 
       }
       // copy keys in a but not in b
       for (let key in a) {

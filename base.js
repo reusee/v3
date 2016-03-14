@@ -89,7 +89,7 @@ export class Component {
     if (a === b) {
       return true;
     }
-    if (n == 0) {
+    if (n <= 0) {
       return a === b;
     }
     let aType = typeof a;
@@ -201,30 +201,13 @@ export class Store {
     this.state = initState;
   }
 
-  handle(state, event, data) {
-    if (debug) {
-      console.log('=state=>', state);
-      console.log('=event=>', event, data);
-    }
-    let newState = state;
-    if (typeof event == 'function') {
-      let s = event(state, data);
-      if (s) {
-        newState = s;
+  emit(event, ...args) {
+    let newState = event(this.state, ...args);
+    if (newState !== undefined && newState !== null) {
+      this.state = newState;
+      if (this.component) {
+        this.component.setState(this.state);
       }
-    } else if (event === undefined || event === null) {
-      console.error('invalid event', data);
-    }
-    if (debug) {
-      console.log('=state=>', newState);
-    }
-    return newState;
-  }
-
-  emit(event, data) {
-    this.state = this.handle(this.state, event, data);
-    if (this.component) {
-      this.component.setState(this.state);
     }
   }
 
@@ -337,6 +320,9 @@ export function op_call(cb) {
 }
 
 function merge_value(left, right) {
+  if (right === null) {
+    return null;
+  }
   if (right._op_insert) {
     if (is_none(left)) {
       left = [];

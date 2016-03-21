@@ -58,7 +58,6 @@ func (h *Handler) Register(o interface{}) {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// allow cross origin
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
 	// requested method
 	what := strings.Split(r.URL.Path, "/")[2]
 	var method *Method

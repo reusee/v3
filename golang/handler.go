@@ -63,7 +63,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// requested method
 	what := strings.Split(r.URL.Path, "/")[2]
 	var method *Method
-	if _, ok := h.methods[what]; !ok { // no method
+	var ok bool
+	if method, ok = h.methods[what]; !ok { // no method
 		http.NotFound(w, r)
 		return
 	}

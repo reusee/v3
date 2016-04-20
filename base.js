@@ -204,7 +204,7 @@ export class Store {
   emit(event, ...args) {
     let newState = event(this.state, ...args);
     if (newState !== undefined && newState !== null) {
-      this.state = newState;
+      this.state = merge(this.state, newState);
       if (this.component) {
         this.component.setState(this.state);
       }
@@ -242,6 +242,12 @@ export let img = (args, subs) => h('img', args, subs);
 export let button = (args, subs) => h('button', args, subs);
 
 export function merge(a, b) {
+  if (b === null || b === undefined) {
+    return a;
+  }
+  if (a === b) {
+    return a;
+  }
   let aType = typeof a;
   let bType = typeof b;
   if (Array.isArray(a)) {

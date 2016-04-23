@@ -262,12 +262,12 @@ export function merge(a, b) {
     if (has_key(b, '>_<')) {
       // wildcard update
       for (let key in a) {
-        obj[key] = merge_value(a[key], b['>_<']);
+        obj[key] = apply_change(a[key], b['>_<']);
       }
     } else {
       // merge
       for (let key in b) {
-        obj[key] = merge_value(a[key], b[key]); 
+        obj[key] = apply_change(a[key], b[key]); 
       }
       // copy keys in a but not in b
       for (let key in a) {
@@ -284,9 +284,9 @@ export function merge(a, b) {
     let wildcard = b['>_<'];
     for (let i = 0; i < a.length; i++) {
       if (has_key(b, i)) {
-        obj.push(merge_value(a[i], b[i]));
+        obj.push(apply_change(a[i], b[i]));
       } else if (wildcard !== undefined && wildcard !== null) {
-        obj.push(merge_value(a[i], wildcard));
+        obj.push(apply_change(a[i], wildcard));
       } else {
         obj.push(a[i]);
       }
@@ -325,7 +325,7 @@ export function op_call(cb) {
   });
 }
 
-function merge_value(left, right) {
+function apply_change(left, right) {
   if (right === null) {
     return null;
   }

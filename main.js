@@ -10,6 +10,12 @@ class App extends Component {
         e(Button, {
           button_text: state.button_text,
         }),
+        div({}, [
+          e('a', {
+            href: 'http://qq.com',
+            target: '_blank',
+          }, 'QQ'),
+        ]),
     ]);
   }
 }

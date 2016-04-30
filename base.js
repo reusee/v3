@@ -29,17 +29,36 @@ class Thunk {
   }
 }
 
+export function $pick_state(state) {
+  return Object.defineProperty({
+    state: state,
+  }, '_pick_state', {
+    __proto__: null,
+    value: true,
+  });
+}
+
 export class Component {
   constructor(state) {
+    if (state._pick_state) {
+      let pick = {};
+      this.stateKeys().forEach(key => {
+        pick[key] = state.state[key];
+      });
+      state = pick;
+    }
     this.thunk = this.newThunk(state);
     this._skip_keys = {};
-    let keys = this.skipKeys();
-    for (let i = 0; i < keys.length; i++) {
-      this._skip_keys[keys[i]] = true;
-    }
+    this.skipKeys().forEach(key => {
+      this._skip_keys[key] = true;
+    });
   }
 
   skipKeys() {
+    return [];
+  }
+
+  stateKeys() {
     return [];
   }
 
@@ -104,8 +123,7 @@ export class Component {
       if (aKeys.length != bKeys.length) {
         return false;
       }
-      let len = aKeys.length;
-      for (let i = 0; i < len; i++) {
+      for (let i = 0, len = aKeys.length; i < len; i++) {
         let key = aKeys[i];
         if (!this.boundedEqual(a[key], b[key], n - 1)) {
           if (key.slice(0, 1) == 'on' && typeof a[key] == 'function' && typeof b[key] == 'function') {
@@ -137,7 +155,7 @@ export class Component {
     if (state.style) {
       state.state = computed(state.style);
     }
-    for (let i = 0; i < keys.length; i++) {
+    for (let i = 0, len = keys.length; i < len; i++) {
       let key = keys[i];
       if (this._skip_keys[key]) {
         continue;
@@ -282,7 +300,7 @@ export function merge(a, b) {
     // the new object
     let obj = [];
     let wildcard = b['>_<'];
-    for (let i = 0; i < a.length; i++) {
+    for (let i = 0, len = a.length; i < len; i++) {
       if (has_key(b, i)) {
         obj.push(apply_change(a[i], b[i]));
       } else if (wildcard !== undefined && wildcard !== null) {
@@ -324,6 +342,10 @@ export function op_call(cb) {
     value: true,
   });
 }
+
+export let $filter = op_call;
+export let $remove = op_remove;
+export let $insert = op_insert;
 
 function apply_change(left, right) {
   if (right === null) {

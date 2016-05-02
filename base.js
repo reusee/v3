@@ -42,9 +42,16 @@ export class Component {
   constructor(state) {
     if (state._pick_state) {
       let pick = {};
-      this.stateKeys().forEach(key => {
-        pick[key] = state.state[key];
-      });
+      let keys = this.stateKeys();
+      if (Array.isArray(keys)) {
+        keys.forEach(key => {
+          pick[key] = state.state[key];
+        });
+      } else {
+        for (let key in keys) {
+          pick[key] = state.state[keys[key]];
+        }
+      }
       state = pick;
     }
     this.thunk = this.newThunk(state);

@@ -8,18 +8,18 @@ module.exports = {
   },
   devtool: '#dev-source-map',
   plugins: [
-    new webpack.ProvidePlugin({
-    }),
   ],
   module: {
     loaders: [
       { test: /\.js$/, exclude: /node_modules/, 
-        loader: 'babel?presets[]=es2015,plugins[]=transform-object-rest-spread' }
+        loader: 'babel?presets[]=es2015,plugins[]=transform-object-rest-spread' },
+      { test: /\.css$/, loader: "style-loader!css-loader" },
     ]
   },
   devServer: {
     contentBase: __dirname,
     port: 18080,
+    host: '0.0.0.0',
   }
 };
 
@@ -31,4 +31,5 @@ if (process.env.PRO) {
     },
   }));
   module.exports.plugins.push(new webpack.optimize.OccurenceOrderPlugin());
+  module.exports.plugins.push(new webpack.optimize.DedupePlugin());
 }

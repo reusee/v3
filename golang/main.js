@@ -1,1 +1,0 @@
-import {emit} from './app'

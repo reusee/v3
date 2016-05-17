@@ -390,3 +390,16 @@ export function remove(ary, index) {
     ...ary.slice(index + 1),
   ];
 }
+
+export function get_url_params() {
+  // from http://stackoverflow.com/a/2880929
+  let match,
+    pl     = /\+/g,  // Regex for replacing addition symbol with a space
+    search = /([^&=]+)=?([^&]*)/g,
+    decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+    query  = window.location.search.substring(1);
+  let urlParams = {};
+  while (match = search.exec(query))
+     urlParams[decode(match[1])] = decode(match[2]);
+  return urlParams;
+}

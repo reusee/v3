@@ -40,7 +40,7 @@ export function $pick_state(state) {
 
 export class Component {
   constructor(state) {
-    if (state._pick_state) {
+    if (state != undefined && state._pick_state) {
       let pick = {};
       let keys = this.stateKeys();
       if (Array.isArray(keys)) {
@@ -72,13 +72,15 @@ export class Component {
   newThunk(state) {
     return new Thunk((state) => {
       let Hook = function(){}
-      Hook.prototype.hook = (element) => {
+      Hook.prototype.hook = (element, hook_name) => {
         this.element = element;
         this.elementChanged(element);
       };
-      let vnode = h('v3-' + this.constructor.name, {
-        'element-changed': new Hook(),
-      }, [this.render(state)]);
+      //let vnode = h('v3-' + this.constructor.name, {
+      //  'element-changed': new Hook(),
+      //}, [this.render(state)]);
+      let vnode = this.render(state);
+      vnode.properties['_v3_hook_'] = new Hook();
       return vnode;
     }, state, this.shouldUpdate.bind(this), this.constructor.name);
   }

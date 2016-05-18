@@ -135,9 +135,6 @@ export class Component {
       for (let i = 0, len = aKeys.length; i < len; i++) {
         let key = aKeys[i];
         if (!this.boundedEqual(a[key], b[key], n - 1)) {
-          if (key.slice(0, 1) == 'on' && typeof a[key] == 'function' && typeof b[key] == 'function') {
-            continue; // skip event handlers
-          }
           return false;
         }
       }
@@ -172,10 +169,6 @@ export class Component {
       let value = state[key];
       let prevValue = previousState[key];
       if (value !== prevValue) {
-        // skip event handler
-        if (key.slice(0, 1) == 'on' && typeof value == 'function' && typeof prevValue == 'function') {
-          continue;
-        }
         // skip explicitly specified
         if ((!is_none(value) && value._skip_in_should_update_check) 
             || (!is_none(prevValue) && prevValue._skip_in_should_update_check)) {
@@ -226,16 +219,20 @@ export function computed(obj) {
 export class Store {
   constructor(initState) {
     this.state = initState;
+    this.settingState = false;
   }
 
   emit(event, ...args) {
     let newState = event(this.state, ...args);
     if (newState !== undefined && newState !== null) {
       this.state = merge(this.state, newState);
-      if (this.component) {
+      if (this.component && !this.settingState) {
+        this.settingState = true; // avoid recursive call to setState
         this.component.setState(this.state);
+        this.settingState = false;
       }
     }
+    return this.state;
   }
 
   setComponent(component) {

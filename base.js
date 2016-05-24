@@ -19,7 +19,7 @@ class Thunk {
     if (this.state === undefined && previousState === undefined && previous.vnode) {
       return previous.vnode;
     }
-    if (this.shouldUpdate(this.state, previousState)) {
+    if (this.shouldUpdate(this.state, previousState) || previous.name != this.name) {
       if (debug) {
         console.log('call render of ', this.name);
       }
@@ -76,11 +76,11 @@ export class Component {
         this.element = element;
         this.elementChanged(element);
       };
-      //let vnode = h('v3-' + this.constructor.name, {
-      //  'element-changed': new Hook(),
-      //}, [this.render(state)]);
-      let vnode = this.render(state);
-      vnode.properties['_v3_hook_'] = new Hook();
+      let vnode = h('v3-' + this.constructor.name, {
+        'element-changed': new Hook(),
+      }, [this.render(state)]);
+      //let vnode = this.render(state);
+      //vnode.properties['_v3_hook_'] = new Hook();
       return vnode;
     }, state, this.shouldUpdate.bind(this), this.constructor.name);
   }

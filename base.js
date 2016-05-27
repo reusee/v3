@@ -14,16 +14,26 @@ class Thunk {
     this.name = name;
   }
 
+  call_render() {
+    return this.renderFn(this.state);
+  }
+
   render(previous) {
+    if (!previous) {
+      return this.call_render();
+    }
+    if (previous.name != this.name) {
+      return this.call_render();
+    }
     var previousState = previous ? previous.state : null;
     if (this.state === undefined && previousState === undefined && previous.vnode) {
       return previous.vnode;
     }
-    if (this.shouldUpdate(this.state, previousState) || previous.name != this.name) {
+    if (this.shouldUpdate(this.state, previousState)) {
       if (debug) {
         console.log('call render of ', this.name);
       }
-      return this.renderFn(this.state);
+      return this.call_render();
     }
     return previous.vnode;
   }

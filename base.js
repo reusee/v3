@@ -96,10 +96,14 @@ export class Component {
   }
 
   setState(newState) {
-    let newThunk = this.newThunk(newState);
-    let patches = diff(this.thunk, newThunk);
-    this.element = patch(this.element, patches);
-    this.thunk = newThunk;
+    if (this.element) {
+      let newThunk = this.newThunk(newState);
+      let patches = diff(this.thunk, newThunk);
+      this.element = patch(this.element, patches);
+      this.thunk = newThunk;
+    } else {
+      console.warn('not bind');
+    }
   }
 
   setStore(store) {
@@ -237,6 +241,18 @@ export class Store {
 
   setComponent(component) {
     this.component = component;
+  }
+
+  emitter(...path) {
+    return function(ev, ...args) {
+      let res = this.emit(ev, ...args);
+      for (let i = path.length - 1; i >= 0; i--) {
+        res = {
+          [path[i]]: res,
+        };
+      }
+      return res;
+    }
   }
 }
 

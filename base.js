@@ -70,6 +70,7 @@ export class Component {
       this._skip_keys[key] = true;
     });
     this.deferring_patching = false;
+    this.state = state;
   }
 
   skipKeys() {
@@ -107,20 +108,21 @@ export class Component {
   }
 
   setState(newState) {
+    this.state = newState;
     if (this.element) {
-      let newThunk = this.newThunk(newState);
-      let oldThunk = this.thunk;
-      this.thunk = newThunk;
       if (this.deferring_patching) {
         return
       } else {
         this.deferring_patching = true;
         setTimeout(() => {
-          let patches = diff(oldThunk, this.thunk);
+          let newThunk = this.newThunk(this.state);
+          let patches = diff(this.thunk, newThunk);
           this.element = patch(this.element, patches);
+          this.thunk = newThunk;
           this.deferring_patching = false;
         }, 10);
       }
+
     } else {
       console.warn('not bind');
     }

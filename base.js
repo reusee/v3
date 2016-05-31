@@ -69,6 +69,7 @@ export class Component {
     this.skipKeys().forEach(key => {
       this._skip_keys[key] = true;
     });
+    this.deferring_patching = false;
   }
 
   skipKeys() {
@@ -108,9 +109,18 @@ export class Component {
   setState(newState) {
     if (this.element) {
       let newThunk = this.newThunk(newState);
-      let patches = diff(this.thunk, newThunk);
-      this.element = patch(this.element, patches);
+      let oldThunk = this.thunk;
       this.thunk = newThunk;
+      if (this.deferring_patching) {
+        return
+      } else {
+        this.deferring_patching = true;
+        setTimeout(() => {
+          let patches = diff(oldThunk, this.thunk);
+          this.element = patch(this.element, patches);
+          this.deferring_patching = false;
+        }, 10);
+      }
     } else {
       console.warn('not bind');
     }
@@ -380,8 +390,8 @@ export let $remove = op_remove;
 export let $insert = op_insert;
 
 function apply_change(left, right) {
-  if (right === null) {
-    return null;
+  if (right === null || right === undefined) {
+    return right;
   }
   if (right._op_insert) {
     if (is_none(left)) {

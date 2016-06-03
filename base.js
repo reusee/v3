@@ -65,15 +65,7 @@ export class Component {
       state = pick;
     }
     this.thunk = this.newThunk(state);
-    this._skip_keys = {};
-    this.skipKeys().forEach(key => {
-      this._skip_keys[key] = true;
-    });
     this.state = state;
-  }
-
-  skipKeys() {
-    return [];
   }
 
   stateKeys() {
@@ -129,81 +121,82 @@ export class Component {
     }
   }
 
-  boundedEqual(a, b, n) {
-    if (a === b) {
-      return true;
-    }
-    if (n <= 0) {
-      return a === b;
-    }
-    let aType = typeof a;
-    let bType = typeof b;
-    if (aType != bType) {
-      return false;
-    }
-    switch (aType) {
-    case 'object':
-      let aKeys = Object.keys(a);
-      let bKeys = Object.keys(b);
-      if (aKeys.length != bKeys.length) {
-        return false;
-      }
-      for (let i = 0, len = aKeys.length; i < len; i++) {
-        let key = aKeys[i];
-        if (!this.boundedEqual(a[key], b[key], n - 1)) {
-          return false;
-        }
-      }
-      return true;
-    default:
-      return this.boundedEqual(a, b, n - 1);
-    }
-  }
-
   // abstract
   shouldUpdate(state, previousState) {
-    if (previousState === undefined && state === undefined) {
-      // no state
-      return true;
-    }
-    if (!previousState || !state) {
-      return true;
-    }
-    let keys = Object.keys(state);
-    let prevKeys = Object.keys(previousState);
-    if (keys.length != prevKeys.length) {
-      return true;
-    }
-    if (state.style) {
-      state.state = computed(state.style);
-    }
-    for (let i = 0, len = keys.length; i < len; i++) {
-      let key = keys[i];
-      if (this._skip_keys[key]) {
+    return shouldUpdate(state, previousState);
+  }
+}
+
+function shouldUpdate(state, previousState) {
+  if (previousState === undefined && state === undefined) {
+    // no state
+    return true;
+  }
+  if (!previousState || !state) {
+    return true;
+  }
+  let keys = Object.keys(state);
+  let prevKeys = Object.keys(previousState);
+  if (keys.length != prevKeys.length) {
+    return true;
+  }
+  if (state.style) {
+    state.state = computed(state.style);
+  }
+  for (let i = 0, len = keys.length; i < len; i++) {
+    let key = keys[i];
+    let value = state[key];
+    let prevValue = previousState[key];
+    if (value !== prevValue) {
+      // skip explicitly specified
+      if ((!is_none(value) && value._skip_in_should_update_check) 
+          || (!is_none(prevValue) && prevValue._skip_in_should_update_check)) {
         continue;
       }
-      let value = state[key];
-      let prevValue = previousState[key];
-      if (value !== prevValue) {
-        // skip explicitly specified
-        if ((!is_none(value) && value._skip_in_should_update_check) 
-            || (!is_none(prevValue) && prevValue._skip_in_should_update_check)) {
-          continue;
+      // do deep compare
+      if ((!is_none(value) && value._do_deep_compare) 
+          || (!is_none(prevValue) && prevValue._do_deep_compare)) {
+        if (boundedEqual(value, prevValue, -1)) {
+          continue
         }
-        // do deep compare
-        if ((!is_none(value) && value._do_deep_compare) 
-            || (!is_none(prevValue) && prevValue._do_deep_compare)) {
-          if (this.boundedEqual(value, prevValue, -1)) {
-            continue
-          }
-        }
-        if (debug) {
-          console.log('key changed:', key);
-        }
-        return true;
+      }
+      if (debug) {
+        console.log('key changed:', key);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+function boundedEqual(a, b, n) {
+  if (a === b) {
+    return true;
+  }
+  if (n <= 0) {
+    return a === b;
+  }
+  let aType = typeof a;
+  let bType = typeof b;
+  if (aType != bType) {
+    return false;
+  }
+  switch (aType) {
+  case 'object':
+    let aKeys = Object.keys(a);
+    let bKeys = Object.keys(b);
+    if (aKeys.length != bKeys.length) {
+      return false;
+    }
+    for (let i = 0, len = aKeys.length; i < len; i++) {
+      let key = aKeys[i];
+      if (!boundedEqual(a[key], b[key], n - 1)) {
+        return false;
       }
     }
-    return false;
+    return true;
+  default:
+    return boundedEqual(a, b, n - 1);
   }
 }
 
@@ -269,10 +262,12 @@ export class Store {
 }
 
 export function e(selector, properties, children) {
-  switch (typeof selector) {
-  case 'string':
+  let type = typeof selector;
+  if (type == 'string') {
     return h(selector, properties, children);
-  default:
+  } else if (type == 'function' && !selector.name) {
+    return new Thunk(selector, properties, shouldUpdate, 'anonymous');
+  } else {
     return new selector(properties).thunk;
   }
 }

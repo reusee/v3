@@ -466,10 +466,8 @@ export function e(selector, properties, ...children) {
       if (key == 'id' || key == 'style' || key == 'class') {
         node[key] = properties[key];
       } else if (key in event_types) {
-        node.events = node.events || {};
         node.events[key] = properties[key];
       } else {
-        node.attributes = node.attributes || {};
         node.attributes[key] = properties[key];
       }
     }

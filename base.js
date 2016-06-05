@@ -1,5 +1,27 @@
 let debug = false;
 
+let next_element_serial = (() => {
+  let serial = 0;
+  return () => {
+    serial += 1;
+    return String(serial);
+  };
+})();
+let element_events = {};
+function element_set_listener(element, serial, ev_type, fn) {
+  let event_set = element_events[serial];
+  if (!event_set) {
+    event_set = {};
+    element_events[serial] = event_set;
+  }
+  if (!(ev_type in event_set)) {
+    element.addEventListener(ev_type.substr(2), (ev) => {
+      return element_events[serial][ev_type](ev);
+    });
+  }
+  event_set[ev_type] = fn;
+}
+
 class Node {
   constructor() {
     this.tag = null;
@@ -8,7 +30,7 @@ class Node {
     this.class = null;
     this.children = [];
     this.attributes = {};
-    this.events = {};
+    this.events = null;
     this.text = null;
   }
 
@@ -53,13 +75,10 @@ class Node {
       }
     }
     if (this.events) {
+      let serial = next_element_serial();
+      element.setAttribute("_v3_element_serial", serial);
       for (let key in this.events) {
-        element.addEventListener(key.substr(2), (ev) => {
-          let handler = this.events[key];
-          if (handler) {
-            return handler(ev);
-          }
-        });
+        element_set_listener(element, serial, key, this.events[key]);
       }
     }
     return element;
@@ -179,26 +198,21 @@ function patch(element, current, previous) {
     }
   }
 
-  // events
-  for (let key in oldNode.events) {
-    if (oldNode.events[key] != node.events[key]) {
-      if (!oldNode.events[key]) { // new
-        element.addEventListener(key.substr(2), (ev) => {
-          let handler = oldNode.events[key];
-          if (handler) {
-            return handler(ev);
-          }
-        });
+  if (node.events) {
+    let serial = element.getAttribute("_v3_element_serial");
+    if (serial == null) {
+      serial = next_element_serial();
+      element.setAttribute("_v3_element_serial", serial);
+    }
+    for (let key in node.events) {
+      element_set_listener(element, serial, key, node.events[key]);
+    }
+    for (let key in element_events[serial]) {
+      if (!(key in node.events)) {
+        element_events[serial][key] = false;
       }
-      oldNode.events[key] = node.events[key];
     }
   }
-  for (let key in node.events) {
-    if (!(key in oldNode.events)) {
-      oldNode.events[key] = null;
-    }
-  }
-  node.events = oldNode.events;
 
   // children
   let max_length = node.children.length;
@@ -466,6 +480,7 @@ export function e(selector, properties, ...children) {
       if (key == 'id' || key == 'style' || key == 'class') {
         node[key] = properties[key];
       } else if (key in event_types) {
+        node.events = node.events || {};
         node.events[key] = properties[key];
       } else {
         node.attributes[key] = properties[key];

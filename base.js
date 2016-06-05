@@ -31,8 +31,10 @@ class Node {
         let child = this.children[i];
         if (child instanceof Thunk) {
           element.appendChild(this.children[i].render().toElement());
-        } else {
+        } else if (child instanceof Node) {
           element.appendChild(this.children[i].toElement());
+        } else {
+          console.error('invalid child type', this.children[i]);
         }
       }
     }
@@ -119,10 +121,15 @@ function patch(element, current, previous) {
 
   // tag
   if (node.tag != oldNode.tag) {
-    let newElement = node.toElement();
-    element.parentNode.InsertBefore(newElement, element);
+    let newElement;
+    if (currentType == 'Thunk') {
+      newElement = current.render().toElement();
+    } else {
+      newElement = current.toElement();
+    }
+    element.parentNode.insertBefore(newElement, element);
     element.parentNode.removeChild(element);
-    return element;
+    return newElement;
   }
 
   // id
@@ -194,8 +201,10 @@ function patch(element, current, previous) {
       let child = node.children[i];
       if (child instanceof Thunk) {
         element.appendChild(child.render().toElement());
-      } else {
+      } else if (child instanceof Node) {
         element.appendChild(child.toElement());
+      } else {
+        console.error('invalid child type', child);
       }
     }
   }
@@ -420,7 +429,7 @@ export class Store {
   }
 }
 
-export function e(selector, properties, children) {
+export function e(selector, properties, ...children) {
   let type = typeof selector;
   if (type == 'string') {
     // not component 
@@ -438,9 +447,7 @@ export function e(selector, properties, children) {
       }
       //TODO hooks
     }
-    if (children) {
-      node.children = children_to_nodes(children);
-    }
+    node.children = children_to_nodes(children);
     return node;
   } else if (type == 'function' && !selector.name) {
     // function based component
@@ -452,36 +459,45 @@ export function e(selector, properties, children) {
 }
 
 function children_to_nodes(children) {
-  let type = typeof children;
-  if (type == 'string') {
-    let node = new Node();
-    //TODO use raw text?
-    node.tag = 'span';
-    node.text = children;
-    return [node];
-  } else if (type == 'object' && Array.isArray(children)) {
-    return children.map(c => children_to_nodes(c)[0]);
-  } else {
-    return [children];
+  let ret = [];
+  for (let i = 0, max = children.length; i < max; i++) {
+    let child = children[i];
+    if (typeof child == 'string') {
+      let node = new Node();
+      node.tag = 'span';
+      node.text = child;
+      ret.push(node);
+    } else if (Array.isArray(child)) {
+      let nodes = children_to_nodes(child);
+      if (nodes.length > 0) {
+        ret.push(...nodes);
+      }
+    } else if (child instanceof Thunk || child instanceof Node) {
+      ret.push(child);
+    } else {
+      if (is_none(child)) {
+        console.error('null child', child);
+      }
+    }
   }
-  console.error('impossible');
+  return ret;
 }
 
 export var none = e('div', { style: { display: 'none' } });
 export var clear = e('div', { style: { clear: 'both' } });
 
-export let div = (args, subs) => e('div', args, subs);
-export let p = (args, subs) => e('p', args, subs);
-export let span = (args, subs) => e('span', args, subs);
-export let ul = (args, subs) => e('ul', args, subs);
-export let li = (args, subs) => e('li', args, subs);
-export let form = (args, subs) => e('form', args, subs);
-export let label = (args, subs) => e('label', args, subs);
-export let input = (args, subs) => e('input', args, subs);
-export let select = (args, subs) => e('select', args, subs);
-export let option = (args, subs) => e('option', args, subs);
-export let img = (args, subs) => e('img', args, subs);
-export let button = (args, subs) => e('button', args, subs);
+export let div = (args, ...subs) => e('div', args, subs);
+export let p = (args, ...subs) => e('p', args, subs);
+export let span = (args, ...subs) => e('span', args, subs);
+export let ul = (args, ...subs) => e('ul', args, subs);
+export let li = (args, ...subs) => e('li', args, subs);
+export let form = (args, ...subs) => e('form', args, subs);
+export let label = (args, ...subs) => e('label', args, subs);
+export let input = (args, ...subs) => e('input', args, subs);
+export let select = (args, ...subs) => e('select', args, subs);
+export let option = (args, ...subs) => e('option', args, subs);
+export let img = (args, ...subs) => e('img', args, subs);
+export let button = (args, ...subs) => e('button', args, subs);
 
 export function merge(a, b) {
   if (b === null || b === undefined) {

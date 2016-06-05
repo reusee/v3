@@ -9,7 +9,6 @@ class Node {
     this.children = [];
     this.attributes = {};
     this.events = {};
-    this.hooks = {};
     this.text = null;
   }
 
@@ -58,7 +57,6 @@ class Node {
         });
       }
     }
-    //TODO set hooks
     return element;
   }
 }
@@ -258,7 +256,8 @@ export class Component {
   }
 
   newThunk(state) {
-    return new Thunk(this.render.bind(this),
+    return new Thunk(
+      this.render.bind(this),
       state,
       this.shouldUpdate.bind(this), 
       this.constructor.name);
@@ -452,7 +451,6 @@ export function e(selector, properties, ...children) {
         node.attributes = node.attributes || {};
         node.attributes[key] = properties[key];
       }
-      //TODO hooks
     }
     node.children = children_to_nodes(children);
     return node;

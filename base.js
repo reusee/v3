@@ -14,7 +14,12 @@ class Node {
   }
 
   toElement() {
-    let element = document.createElement(this.tag);
+    let element;
+    if (this.text !== null) {
+      element = document.createTextNode(this.text);
+    } else {
+      element = document.createElement(this.tag);
+    }
     if (this.id !== null) {
       element.id = this.id;
     }
@@ -52,9 +57,6 @@ class Node {
           }
         });
       }
-    }
-    if (this.text !== null) {
-      element.innerText = this.text;
     }
     //TODO set hooks
     return element;
@@ -192,7 +194,7 @@ function patch(element, current, previous) {
   if (oldNode.children.length < max_length) {
     max_length = oldNode.children.length;
   }
-  let elementChildren = element.children;
+  let elementChildren = element.childNodes;
   for (let i = 0; i < max_length; i++) {
     patch(elementChildren[i], node.children[i], oldNode.children[i]);
   }
@@ -210,8 +212,13 @@ function patch(element, current, previous) {
   }
   if (oldNode.children.length > max_length) {
     for (let i = max_length, max = oldNode.children.length; i < max; i++) {
-      element.removeChild(elementChildren[i]);
+      element.removeChild(elementChildren[max_length]);
     }
+  }
+
+  // text
+  if (node.text != null && node.text != oldNode.text) {
+    element.nodeValue = node.text;
   }
 
   return element;
@@ -462,22 +469,19 @@ function children_to_nodes(children) {
   let ret = [];
   for (let i = 0, max = children.length; i < max; i++) {
     let child = children[i];
-    if (typeof child == 'string') {
-      let node = new Node();
-      node.tag = 'span';
-      node.text = child;
-      ret.push(node);
-    } else if (Array.isArray(child)) {
+    if (Array.isArray(child)) {
       let nodes = children_to_nodes(child);
       if (nodes.length > 0) {
         ret.push(...nodes);
       }
     } else if (child instanceof Thunk || child instanceof Node) {
       ret.push(child);
+    } else if (is_none(child)) {
+      console.error('null child', child);
     } else {
-      if (is_none(child)) {
-        console.error('null child', child);
-      }
+      let node = new Node();
+      node.text = String(child);
+      ret.push(node);
     }
   }
   return ret;

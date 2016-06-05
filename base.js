@@ -206,9 +206,9 @@ function patch(element, current, previous) {
     for (let i = max_length, max = node.children.length; i < max; i++) {
       let child = node.children[i];
       if (child instanceof Thunk) {
-        let element = child.render().toElement();
-        child.element = element;
-        element.appendChild(element);
+        let childElement = child.render().toElement();
+        child.element = childElement;
+        element.appendChild(childElement);
       } else if (child instanceof Node) {
         element.appendChild(child.toElement());
       } else {

@@ -116,6 +116,7 @@ function patch(element, current, previous) {
       node = oldNode;
     }
     current.element = element;
+    current.node = node;
   } else {
     oldNode = previous;
     node = current;
@@ -282,6 +283,7 @@ export class Component {
   }
 
   setState(newState) {
+    //let t0 = new Date();
     this.state = newState;
     if (this.element) {
       let oldThunk = this.thunk;
@@ -290,6 +292,7 @@ export class Component {
     } else {
       console.warn('not bind');
     }
+    //console.log('%c refresh in ', 'background: #333; color: #328922', new Date() - t0);
   }
 
   setStore(store) {

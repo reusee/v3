@@ -4,7 +4,7 @@ class Node {
   constructor() {
     this.tag = null;
     this.id = null;
-    this.style = null;
+    this.style = {};
     this.class = null;
     this.children = [];
     this.attributes = {};

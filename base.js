@@ -46,7 +46,10 @@ class Node {
     }
     if (this.attributes) {
       for (let key in this.attributes) {
-        element.setAttribute(key, this.attributes[key]);
+        let value = this.attributes[key];
+        if (value !== undefined && value !== null) {
+          element.setAttribute(key, value);
+        }
       }
     }
     if (this.events) {
@@ -164,7 +167,10 @@ function patch(element, current, previous) {
   // attributes
   for (let key in node.attributes) {
     if (node.attributes[key] != oldNode.attributes[key]) {
-      element.setAttribute(key, node.attributes[key]);
+      let value = node.attributes[key];
+      if (value !== undefined && value !== null) {
+        element.setAttribute(key, value);
+      }
     }
   }
   for (let key in oldNode.attributes) {

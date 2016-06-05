@@ -23,6 +23,8 @@ class App extends Component {
 class Label extends Component {
   render(state) {
     return p({
+      id: "foo",
+      class: "bar",
       style: {
         color: state.color,
       },

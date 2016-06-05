@@ -1,42 +1,211 @@
-import h from 'virtual-dom/h'
-import diff from 'virtual-dom/diff'
-import patch from 'virtual-dom/patch'
-import createElement from 'virtual-dom/create-element'
-
 let debug = false;
+
+class Node {
+  constructor() {
+    this.tag = null;
+    this.id = null;
+    this.style = null;
+    this.class = null;
+    this.children = [];
+    this.attributes = {};
+    this.events = {};
+    this.hooks = {};
+    this.text = null;
+  }
+
+  toElement() {
+    let element = document.createElement(this.tag);
+    if (this.id !== null) {
+      element.id = this.id;
+    }
+    if (this.style) {
+      for (let key in this.style) {
+        element.style[key] = this.style[key];
+      }
+    }
+    if (this.class !== null) {
+      element.className = this.class;
+    }
+    if (this.children) {
+      for (let i = 0, max = this.children.length; i < max; i++) {
+        let child = this.children[i];
+        if (child instanceof Thunk) {
+          element.appendChild(this.children[i].render().toElement());
+        } else {
+          element.appendChild(this.children[i].toElement());
+        }
+      }
+    }
+    if (this.attributes) {
+      for (let key in this.attributes) {
+        element.setAttribute(key, this.attributes[key]);
+      }
+    }
+    if (this.events) {
+      for (let key in this.events) {
+        element.addEventListener(key.substr(2), (ev) => {
+          let handler = this.events[key];
+          if (handler) {
+            return handler(ev);
+          }
+        });
+      }
+    }
+    if (this.text !== null) {
+      element.innerText = this.text;
+    }
+    //TODO set hooks
+    return element;
+  }
+}
 
 class Thunk {
   constructor(renderFn, state, shouldUpdate, name) {
-    this.type = 'Thunk';
     this.renderFn = renderFn;
     this.state = state;
     this.shouldUpdate = shouldUpdate;
     this.name = name;
+    this.node = null;
   }
 
-  call_render() {
-    return this.renderFn(this.state);
+  render() {
+    let node = this.renderFn(this.state);
+    this.node = node;
+    return node;
+  }
+}
+
+function patch(element, current, previous) {
+  if (!element) {
+    console.error('patching null element');
+  }
+  let currentType = current instanceof Thunk ? 'Thunk' : 'Node';
+  let previousType = previous instanceof Node ? 'Node' : 'Thunk';
+
+  // not diff
+  if (!previous 
+      || currentType != previousType
+      || currentType == 'Thunk' && current.name != previous.name
+      || currentType == 'Thunk' && !previous.node
+      ) {
+    let newElement;
+    if (currentType == 'Thunk') {
+      newElement = current.render().toElement();
+    } else {
+      newElement = current.toElement();
+    }
+    element.parentNode.insertBefore(newElement, element);
+    element.parentNode.removeChild(element);
+    return newElement;
   }
 
-  render(previous) {
-    if (!previous) {
-      return this.call_render();
+  // get nodes
+  let oldNode;
+  let node;
+  if (currentType == 'Thunk') {
+    oldNode = previous.node;
+    if (current.shouldUpdate(current.state, previous.state)) {
+      node = current.render();
+    } else {
+      node = oldNode;
     }
-    if (previous.name != this.name) {
-      return this.call_render();
+  } else {
+    oldNode = previous;
+    node = current;
+  }
+  if (node === oldNode) {
+    return element;
+  }
+
+  // tag
+  if (node.tag != oldNode.tag) {
+    let newElement = node.toElement();
+    element.parentNode.InsertBefore(newElement, element);
+    element.parentNode.removeChild(element);
+    return element;
+  }
+
+  // id
+  if (node.id != oldNode.id) {
+    element.id = node.id;
+  }
+
+  // style
+  for (let key in node.style) {
+    if (node.style[key] != oldNode.style[key]) {
+      element.style[key] = node.style[key];
     }
-    var previousState = previous ? previous.state : null;
-    if (this.state === undefined && previousState === undefined && previous.vnode) {
-      return previous.vnode;
+  }
+  for (let key in oldNode.style) {
+    if (!(key in node.style)) {
+      element.style[key] = null;
     }
-    if (this.shouldUpdate(this.state, previousState)) {
-      if (debug) {
-        console.log('call render of ', this.name);
+  }
+
+  // class
+  if (node.class != oldNode.class) {
+    element.className = node.class;
+  }
+
+  // attributes
+  for (let key in node.attributes) {
+    if (node.attributes[key] != oldNode.attributes[key]) {
+      element.setAttribute(key, node.attributes[key]);
+    }
+  }
+  for (let key in oldNode.attributes) {
+    if (!(key in node.attributes)) {
+      element.removeAttribute(key);
+    }
+  }
+
+  // events
+  for (let key in oldNode.events) {
+    if (oldNode.events[key] != node.events[key]) {
+      if (!oldNode.events[key]) { // new
+        element.addEventListener(key.substr(2), (ev) => {
+          let handler = oldNode.events[key];
+          if (handler) {
+            return handler(ev);
+          }
+        });
       }
-      return this.call_render();
+      oldNode.events[key] = node.events[key];
     }
-    return previous.vnode;
   }
+  for (let key in node.events) {
+    if (!(key in oldNode.events)) {
+      oldNode.events[key] = null;
+    }
+  }
+  node.events = oldNode.events;
+
+  // children
+  let max_length = node.children.length;
+  if (oldNode.children.length < max_length) {
+    max_length = oldNode.children.length;
+  }
+  let elementChildren = element.children;
+  for (let i = 0; i < max_length; i++) {
+    patch(elementChildren[i], node.children[i], oldNode.children[i]);
+  }
+  if (node.children.length > max_length) {
+    for (let i = max_length, max = node.children.length; i < max; i++) {
+      let child = node.children[i];
+      if (child instanceof Thunk) {
+        element.appendChild(child.render().toElement());
+      } else {
+        element.appendChild(child.toElement());
+      }
+    }
+  }
+  if (oldNode.children.length > max_length) {
+    for (let i = max_length, max = oldNode.children.length; i < max; i++) {
+      element.removeChild(elementChildren[i]);
+    }
+  }
+
+  return element;
 }
 
 export function $pick_state(state) {
@@ -73,28 +242,19 @@ export class Component {
   }
 
   newThunk(state) {
-    return new Thunk((state) => {
-      let Hook = function(){}
-      Hook.prototype.hook = (element, hook_name) => {
-        this.element = element;
-        this.elementChanged(element);
-      };
-      let vnode = h('v3-' + this.constructor.name, {
-        'element-changed': new Hook(),
-      }, [this.render(state)]);
-      //let vnode = this.render(state);
-      //vnode.properties['_v3_hook_'] = new Hook();
-      return vnode;
-    }, state, this.shouldUpdate.bind(this), this.constructor.name);
+    return new Thunk(this.render.bind(this),
+      state,
+      this.shouldUpdate.bind(this), 
+      this.constructor.name);
   }
 
   // abstract
   render(state) {
-    return h();
+    return e('div');
   }
 
   bind(parent) {
-    this.element = createElement(this.thunk);
+    this.element = this.thunk.render().toElement();
     parent.appendChild(this.element);
   }
 
@@ -102,8 +262,7 @@ export class Component {
     this.state = newState;
     if (this.element) {
       let newThunk = this.newThunk(this.state);
-      let patches = diff(this.thunk, newThunk);
-      this.element = patch(this.element, patches);
+      this.element = patch(this.element, newThunk, this.thunk);
       this.thunk = newThunk;
     } else {
       console.warn('not bind');
@@ -264,29 +423,65 @@ export class Store {
 export function e(selector, properties, children) {
   let type = typeof selector;
   if (type == 'string') {
-    return h(selector, properties, children);
+    // not component 
+    let node = new Node();
+    node.tag = selector;
+    for (let key in properties) {
+      if (key == 'id' || key == 'style' || key == 'class') {
+        node[key] = properties[key];
+      } else if (key in event_types) {
+        node.events = node.events || {};
+        node.events[key] = properties[key];
+      } else {
+        node.attributes = node.attributes || {};
+        node.attributes[key] = properties[key];
+      }
+      //TODO hooks
+    }
+    if (children) {
+      node.children = children_to_nodes(children);
+    }
+    return node;
   } else if (type == 'function' && !selector.name) {
+    // function based component
     return new Thunk(selector, properties, shouldUpdate, 'anonymous');
   } else {
+    // class based component
     return new selector(properties).thunk;
   }
 }
 
-export var none = h('div', { style: { display: 'none' } });
-export var clear = h('div', { style: { clear: 'both' } });
+function children_to_nodes(children) {
+  let type = typeof children;
+  if (type == 'string') {
+    let node = new Node();
+    //TODO use raw text?
+    node.tag = 'span';
+    node.text = children;
+    return [node];
+  } else if (type == 'object' && Array.isArray(children)) {
+    return children.map(c => children_to_nodes(c)[0]);
+  } else {
+    return [children];
+  }
+  console.error('impossible');
+}
 
-export let div = (args, subs) => h('div', args, subs);
-export let p = (args, subs) => h('p', args, subs);
-export let span = (args, subs) => h('span', args, subs);
-export let ul = (args, subs) => h('ul', args, subs);
-export let li = (args, subs) => h('li', args, subs);
-export let form = (args, subs) => h('form', args, subs);
-export let label = (args, subs) => h('label', args, subs);
-export let input = (args, subs) => h('input', args, subs);
-export let select = (args, subs) => h('select', args, subs);
-export let option = (args, subs) => h('option', args, subs);
-export let img = (args, subs) => h('img', args, subs);
-export let button = (args, subs) => h('button', args, subs);
+export var none = e('div', { style: { display: 'none' } });
+export var clear = e('div', { style: { clear: 'both' } });
+
+export let div = (args, subs) => e('div', args, subs);
+export let p = (args, subs) => e('p', args, subs);
+export let span = (args, subs) => e('span', args, subs);
+export let ul = (args, subs) => e('ul', args, subs);
+export let li = (args, subs) => e('li', args, subs);
+export let form = (args, subs) => e('form', args, subs);
+export let label = (args, subs) => e('label', args, subs);
+export let input = (args, subs) => e('input', args, subs);
+export let select = (args, subs) => e('select', args, subs);
+export let option = (args, subs) => e('option', args, subs);
+export let img = (args, subs) => e('img', args, subs);
+export let button = (args, subs) => e('button', args, subs);
 
 export function merge(a, b) {
   if (b === null || b === undefined) {
@@ -411,15 +606,181 @@ export function remove(ary, index) {
   ];
 }
 
-export function get_url_params() {
-  // from http://stackoverflow.com/a/2880929
-  let match,
-    pl     = /\+/g,  // Regex for replacing addition symbol with a space
-    search = /([^&=]+)=?([^&]*)/g,
-    decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
-    query  = window.location.search.substring(1);
-  let urlParams = {};
-  while (match = search.exec(query))
-     urlParams[decode(match[1])] = decode(match[2]);
-  return urlParams;
+let event_types = {
+  onDOMActivate: true,
+  onDOMAttrModified: true,
+  onDOMAttributeNameChanged: true,
+  onDOMCharacterDataModified: true,
+  onDOMContentLoaded: true,
+  onDOMElementNameChanged: true,
+  onDOMFocusIn: true,
+  onDOMFocusOut: true,
+  onDOMNodeInserted: true,
+  onDOMNodeInsertedIntoDocument: true,
+  onDOMNodeRemoved: true,
+  onDOMNodeRemovedFromDocument: true,
+  onDOMSubtreeModified: true,
+  onSVGAbort: true,
+  onSVGError: true,
+  onSVGLoad: true,
+  onSVGResize: true,
+  onSVGScroll: true,
+  onSVGUnload: true,
+  onSVGZoom: true,
+  onabort: true,
+  onafterprint: true,
+  onanimationend: true,
+  onanimationiteration: true,
+  onanimationstart: true,
+  onaudioend: true,
+  onaudioprocess: true,
+  onaudiostart: true,
+  onbeforeprint: true,
+  onbeforeunload: true,
+  onbeginEvent: true,
+  onblocked: true,
+  onblur: true,
+  onboundary: true,
+  oncached: true,
+  oncanplay: true,
+  oncanplaythrough: true,
+  onchange: true,
+  onchargingchange: true,
+  onchargingtimechange: true,
+  onchecking: true,
+  onclick: true,
+  onclose: true,
+  oncomplete: true,
+  oncompositionend: true,
+  oncompositionstart: true,
+  oncompositionupdate: true,
+  oncontextmenu: true,
+  oncopy: true,
+  oncut: true,
+  ondblclick: true,
+  ondevicelight: true,
+  ondevicemotion: true,
+  ondeviceorientation: true,
+  ondeviceproximity: true,
+  ondischargingtimechange: true,
+  ondownloading: true,
+  ondrag: true,
+  ondragend: true,
+  ondragenter: true,
+  ondragleave: true,
+  ondragover: true,
+  ondragstart: true,
+  ondrop: true,
+  ondurationchange: true,
+  onemptied: true,
+  onend: true,
+  onendEvent: true,
+  onended: true,
+  onerror: true,
+  onfocus: true,
+  onfocusinUnimplemented: true,
+  onfocusoutUnimplemented: true,
+  onfullscreenchange: true,
+  onfullscreenerror: true,
+  ongamepadconnected: true,
+  ongamepaddisconnected: true,
+  ongotpointercapture: true,
+  onhashchange: true,
+  oninput: true,
+  oninvalid: true,
+  onkeydown: true,
+  onkeypress: true,
+  onkeyup: true,
+  onlanguagechange: true,
+  onlevelchange: true,
+  onload: true,
+  onloadeddata: true,
+  onloadedmetadata: true,
+  onloadend: true,
+  onloadstart: true,
+  onlostpointercapture: true,
+  onmark: true,
+  onmessage: true,
+  onmousedown: true,
+  onmouseenter: true,
+  onmouseleave: true,
+  onmousemove: true,
+  onmouseout: true,
+  onmouseover: true,
+  onmouseup: true,
+  onnomatch: true,
+  onnotificationclick: true,
+  onnoupdate: true,
+  onobsolete: true,
+  onoffline: true,
+  ononline: true,
+  onopen: true,
+  onorientationchange: true,
+  onpagehide: true,
+  onpageshow: true,
+  onpaste: true,
+  onpause: true,
+  onplay: true,
+  onplaying: true,
+  onpointercancel: true,
+  onpointerdown: true,
+  onpointerenter: true,
+  onpointerleave: true,
+  onpointerlockchange: true,
+  onpointerlockerror: true,
+  onpointermove: true,
+  onpointerout: true,
+  onpointerover: true,
+  onpointerup: true,
+  onpopstate: true,
+  onprogress: true,
+  onpush: true,
+  onpushsubscriptionchange: true,
+  onratechange: true,
+  onreadystatechange: true,
+  onrepeatEvent: true,
+  onreset: true,
+  onresize: true,
+  onresourcetimingbufferfull: true,
+  onresult: true,
+  onresume: true,
+  onscroll: true,
+  onseeked: true,
+  onseeking: true,
+  onselect: true,
+  onselectionchange: true,
+  onselectstart: true,
+  onshow: true,
+  onsoundend: true,
+  onsoundstart: true,
+  onspeechend: true,
+  onspeechstart: true,
+  onstalled: true,
+  onstart: true,
+  onstorage: true,
+  onsubmit: true,
+  onsuccess: true,
+  onsuspend: true,
+  ontimeout: true,
+  ontimeupdate: true,
+  ontouchcancel: true,
+  ontouchend: true,
+  ontouchenter: true,
+  ontouchleave: true,
+  ontouchmove: true,
+  ontouchstart: true,
+  ontransitionend: true,
+  onunload: true,
+  onupdateready: true,
+  onupgradeneeded: true,
+  onuserproximity: true,
+  onversionchange: true,
+  onvisibilitychange: true,
+  onvoiceschanged: true,
+  onvolumechange: true,
+  onvrdisplayconnected: true,
+  onvrdisplaydisconnected: true,
+  onvrdisplaypresentchange: true,
+  onwaiting: true,
+  onwheel: true,
 }

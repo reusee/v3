@@ -76,7 +76,7 @@ class Node {
     }
     if (this.events) {
       let serial = next_element_serial();
-      element.setAttribute("_v3_element_serial", serial);
+      element._v3_element_serial = serial;
       for (let key in this.events) {
         element_set_listener(element, serial, key, this.events[key]);
       }
@@ -199,10 +199,10 @@ function patch(element, current, previous) {
   }
 
   if (node.events) {
-    let serial = element.getAttribute("_v3_element_serial");
+    let serial = element._v3_element_serial;
     if (serial == null) {
       serial = next_element_serial();
-      element.setAttribute("_v3_element_serial", serial);
+      element._v3_element_serial = serial;
     }
     for (let key in node.events) {
       element_set_listener(element, serial, key, node.events[key]);

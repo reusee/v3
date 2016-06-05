@@ -34,7 +34,9 @@ class Node {
       for (let i = 0, max = this.children.length; i < max; i++) {
         let child = this.children[i];
         if (child instanceof Thunk) {
-          element.appendChild(this.children[i].render().toElement());
+          let childElement = this.children[i].render().toElement();
+          this.children[i].element = childElement;
+          element.appendChild(childElement);
         } else if (child instanceof Node) {
           element.appendChild(this.children[i].toElement());
         } else {
@@ -68,6 +70,7 @@ class Thunk {
     this.shouldUpdate = shouldUpdate;
     this.name = name;
     this.node = null;
+    this.element = null;
   }
 
   render() {
@@ -93,6 +96,7 @@ function patch(element, current, previous) {
     let newElement;
     if (currentType == 'Thunk') {
       newElement = current.render().toElement();
+      current.element = newElement;
     } else {
       newElement = current.toElement();
     }
@@ -111,6 +115,7 @@ function patch(element, current, previous) {
     } else {
       node = oldNode;
     }
+    current.element = element;
   } else {
     oldNode = previous;
     node = current;
@@ -124,6 +129,7 @@ function patch(element, current, previous) {
     let newElement;
     if (currentType == 'Thunk') {
       newElement = current.render().toElement();
+      current.element = newElement;
     } else {
       newElement = current.toElement();
     }
@@ -200,7 +206,9 @@ function patch(element, current, previous) {
     for (let i = max_length, max = node.children.length; i < max; i++) {
       let child = node.children[i];
       if (child instanceof Thunk) {
-        element.appendChild(child.render().toElement());
+        let element = child.render().toElement();
+        child.element = element;
+        element.appendChild(element);
       } else if (child instanceof Node) {
         element.appendChild(child.toElement());
       } else {
@@ -256,8 +264,7 @@ export class Component {
   }
 
   newThunk(state) {
-    return new Thunk(
-      this.render.bind(this),
+    return new Thunk(this.render.bind(this),
       state,
       this.shouldUpdate.bind(this), 
       this.constructor.name);
@@ -270,15 +277,16 @@ export class Component {
 
   bind(parent) {
     this.element = this.thunk.render().toElement();
+    this.thunk.element = this.element;
     parent.appendChild(this.element);
   }
 
   setState(newState) {
     this.state = newState;
     if (this.element) {
-      let newThunk = this.newThunk(this.state);
-      this.element = patch(this.element, newThunk, this.thunk);
-      this.thunk = newThunk;
+      let oldThunk = this.thunk;
+      this.thunk = this.newThunk(this.state);
+      this.element = patch(this.element, this.thunk, oldThunk);
     } else {
       console.warn('not bind');
     }
@@ -298,6 +306,10 @@ export class Component {
   // abstract
   shouldUpdate(state, previousState) {
     return shouldUpdate(state, previousState);
+  }
+
+  select(selector) {
+    return this.thunk.element.querySelector(selector);
   }
 }
 

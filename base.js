@@ -1,26 +1,28 @@
 let debug = false;
 
-let next_element_serial = (() => {
-  let serial = 0;
-  return () => {
-    serial += 1;
-    return String(serial);
-  };
-})();
 let element_events = {};
-function element_set_listener(element, serial, ev_type, fn) {
-  let event_set = element_events[serial];
-  if (!event_set) {
-    event_set = {};
-    element_events[serial] = event_set;
+let element_set_listener = (() => {
+  let next_element_serial = 1;
+  return function(element, ev_type, fn) {
+    let serial = element._v3_element_serial;
+    if (!serial) {
+      serial = next_element_serial;
+      next_element_serial++;
+      element._v3_element_serial = serial;
+    }
+    let event_set = element_events[serial];
+    if (!event_set) {
+      event_set = {};
+      element_events[serial] = event_set;
+    }
+    if (!(ev_type in event_set)) {
+      element.addEventListener(ev_type.substr(2), (ev) => {
+        return element_events[serial][ev_type](ev);
+      });
+    }
+    event_set[ev_type] = fn;
   }
-  if (!(ev_type in event_set)) {
-    element.addEventListener(ev_type.substr(2), (ev) => {
-      return element_events[serial][ev_type](ev);
-    });
-  }
-  event_set[ev_type] = fn;
-}
+})();
 
 class Node {
   constructor() {
@@ -75,10 +77,8 @@ class Node {
       }
     }
     if (this.events) {
-      let serial = next_element_serial();
-      element._v3_element_serial = serial;
       for (let key in this.events) {
-        element_set_listener(element, serial, key, this.events[key]);
+        element_set_listener(element, key, this.events[key]);
       }
     }
     return element;
@@ -199,14 +199,10 @@ function patch(element, current, previous) {
   }
 
   if (node.events) {
-    let serial = element._v3_element_serial;
-    if (serial == null) {
-      serial = next_element_serial();
-      element._v3_element_serial = serial;
-    }
     for (let key in node.events) {
-      element_set_listener(element, serial, key, node.events[key]);
+      element_set_listener(element, key, node.events[key]);
     }
+    let serial = element._v3_element_serial;
     for (let key in element_events[serial]) {
       if (!(key in node.events)) {
         element_events[serial][key] = false;

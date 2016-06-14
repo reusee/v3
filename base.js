@@ -484,13 +484,15 @@ export function e(selector, properties, ...children) {
     }
     node.children = children_to_nodes(children);
     return node;
-  } else if (type == 'function' && !selector.name) {
-    // function based component
-    return new Thunk(selector, properties, shouldUpdate, 'anonymous');
-  } else {
-    // class based component
-    return new selector(properties).thunk;
-  }
+  } else if (type == 'function') {
+    if (selector.length == 1) {
+      // function based component
+      return new Thunk(selector, properties, shouldUpdate, 'anonymous');
+    } else {
+      // class based component
+      return new selector(properties).thunk;
+    }
+  } 
 }
 
 function children_to_nodes(children) {

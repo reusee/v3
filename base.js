@@ -618,6 +618,7 @@ export function op_call(cb) {
 }
 
 export let $filter = op_call;
+export let $set = (v) => $filter(_ => v);
 export let $remove = op_remove;
 export let $insert = op_insert;
 

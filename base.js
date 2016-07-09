@@ -481,6 +481,13 @@ export function e(selector, properties, ...children) {
           && (properties.type == 'radio' || properties.type == 'checkbox')
           && !properties.checked) {
         continue
+      } else if (key == 'disabled'
+          && (selector == 'input'
+          && properties.type == 'button'
+          || selector == 'button')
+          && properties
+          && !properties.disabled) {
+        continue
       } else if (key in event_types) {
         node.events = node.events || {};
         node.events[key] = properties[key];

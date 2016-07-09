@@ -475,6 +475,12 @@ export function e(selector, properties, ...children) {
     for (let key in properties) {
       if (key == 'id' || key == 'style' || key == 'class') {
         node[key] = properties[key];
+      } else if (key == 'checked' 
+          && selector == 'input' 
+          && properties 
+          && (properties.type == 'radio' || properties.type == 'checkbox')
+          && !properties.checked) {
+        continue
       } else if (key in event_types) {
         node.events = node.events || {};
         node.events[key] = properties[key];

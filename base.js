@@ -472,6 +472,9 @@ export function e(selector, properties, ...children) {
     // not component 
     let node = new Node();
     node.tag = selector;
+    if (typeof properties != 'object') {
+      console.error('properties must be object, not ' + (typeof properties) + ': ' + properties);
+    }
     for (let key in properties) {
       if (key == 'id' || key == 'style' || key == 'class') {
         node[key] = properties[key];

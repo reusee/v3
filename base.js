@@ -346,7 +346,7 @@ function shouldUpdate(state, previousState) {
     return true;
   }
   if (state.style) {
-    state.state = computed(state.style);
+    state.style = computed(state.style);
   }
   for (let i = 0, len = keys.length; i < len; i++) {
     let key = keys[i];

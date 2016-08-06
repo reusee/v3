@@ -478,6 +478,8 @@ export function e(selector, properties, ...children) {
     for (let key in properties) {
       if (key == 'id' || key == 'class') {
         node[key] = properties[key];
+      } else if (key == 'style') {
+        node.style = compatible_style(properties.style);
       } else if (key == 'checked' 
           && selector == 'input' 
           && properties 
@@ -512,6 +514,42 @@ export function e(selector, properties, ...children) {
 }
 
 let is_ios = /iPad|iPhone/.test(navigator.userAgent);
+
+function compatible_style(style) {
+  if (is_ios) {
+    if ('display' in style && style.display == 'flex') {
+      style.display = '-webkit-flex';
+    }
+    if ('flex' in style) {
+      style['-webkit-flex'] = style.flex;
+    }
+    if ('flexBasis' in style) {
+      style['-webkit-flex-basis'] = style.flexBasis;
+    }
+    if ('flexDirection' in style) {
+      style['-webkit-flex-direction'] = style.flexDirection;
+    }
+    if ('flexFlow' in style) {
+      style['-webkit-flex-flow'] = style.flexFlow;
+    }
+    if ('flexGrow' in style) {
+      style['-webkit-flex-grow'] = style.flexGrow;
+    }
+    if ('flexShrink' in style) {
+      style['-webkit-flex-shrink'] = style.flexShrink;
+    }
+    if ('flexWrap' in style) {
+      style['-webkit-flex-wrap'] = style.flexWrap;
+    }
+    if ('justifyContent' in style) {
+      style['-webkit-justify-content'] = style.justifyContent;
+    }
+    if ('alignItems' in style) {
+      style['-webkit-align-items'] = style.alignItems;
+    }
+  }
+  return style;
+}
 
 function children_to_nodes(children) {
   let ret = [];

@@ -552,6 +552,9 @@ export let select = (args, ...subs) => e('select', args, subs);
 export let option = (args, ...subs) => e('option', args, subs);
 export let img = (args, ...subs) => e('img', args, subs);
 export let button = (args, ...subs) => e('button', args, subs);
+export let table = (args, ...subs) => e('table', args, subs);
+export let tr = (args, ...subs) => e('tr', args, subs);
+export let td = (args, ...subs) => e('td', args, subs);
 
 export function merge(a, b) {
   if (b === null || b === undefined) {

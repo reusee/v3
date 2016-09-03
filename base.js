@@ -449,6 +449,19 @@ export class Store {
     return this.state;
   }
 
+  update(...args) {
+    if (args.length == 0) {
+      return;
+    }
+    let change = args[args.length-1];
+    for (let i = args.length - 2; i >= 0; i--) {
+      change = {
+        [args[i]]: change,
+      };
+    }
+    return this.emit(() => change);
+  }
+
   setComponent(component) {
     this.component = component;
   }

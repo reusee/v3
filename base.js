@@ -462,20 +462,6 @@ export class Store {
     return this.emit(() => change);
   }
 
-  merge(...args) {
-    if (args.length == 0) {
-      return;
-    }
-    let change = args[args.length - 1];
-    for (let i = args.length - 2; i > 0; i--) {
-      change = {
-        [args[i]]: change,
-      };
-    }
-    this.state = merge(this.state, change);
-    return this.state;
-  }
-
   setComponent(component) {
     this.component = component;
   }

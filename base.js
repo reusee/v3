@@ -1,5 +1,3 @@
-let debug = false;
-
 let element_events = {};
 let element_set_listener = (() => {
   let next_element_serial = 1;
@@ -317,9 +315,6 @@ export class Component {
 
   // abstract
   elementChanged(element) {
-    if (debug) {
-      console.log('element changed', this.constructor.name);
-    }
   }
 
   // abstract
@@ -364,9 +359,6 @@ function shouldUpdate(state, previousState) {
         if (boundedEqual(value, prevValue, -1)) {
           continue
         }
-      }
-      if (debug) {
-        console.log('key changed:', key);
       }
       return true;
     }

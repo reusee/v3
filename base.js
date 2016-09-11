@@ -526,8 +526,6 @@ export function e(selector, properties, ...children) {
   } 
 }
 
-let is_ios = /iPad|iPhone/.test(navigator.userAgent);
-
 function children_to_nodes(children) {
   let ret = [];
   for (let i = 0, max = children.length; i < max; i++) {
@@ -656,6 +654,7 @@ export function op_call(cb) {
 export let $filter = op_call;
 export let $set = (v) => $filter(_ => v);
 export let $remove = op_remove;
+export let $delete = op_remove;
 export let $insert = op_insert;
 
 function apply_change(left, right) {

@@ -32,6 +32,7 @@ class Node {
     this.attributes = {};
     this.events = null;
     this.text = null;
+    this.html = null;
   }
 
   toElement() {
@@ -40,6 +41,9 @@ class Node {
       element = document.createTextNode(this.text);
     } else {
       element = document.createElement(this.tag);
+    }
+    if (this.html !== null) {
+      element.innerHTML = this.html;
     }
     if (this.id !== null) {
       element.id = this.id;
@@ -157,6 +161,10 @@ function patch(element, current, previous) {
     element.parentNode.insertBefore(newElement, element);
     element.parentNode.removeChild(element);
     return newElement;
+  }
+
+  if (node.html != oldNode.html) {
+    element.innerHTML = node.html;
   }
 
   // id
@@ -481,7 +489,7 @@ export function e(selector, properties, ...children) {
       console.error('properties must be object, not ' + (typeof properties) + ': ' + properties);
     }
     for (let key in properties) {
-      if (key == 'id' || key == 'class') {
+      if (key == 'id' || key == 'class' || key == 'html') {
         node[key] = properties[key];
       } else if (key == 'style') {
         node.style = properties.style;

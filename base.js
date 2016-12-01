@@ -26,10 +26,10 @@ class Node {
   constructor() {
     this.tag = null;
     this.id = null;
-    this.style = {};
+    this.style = null;
     this.class = null;
-    this.children = [];
-    this.attributes = {};
+    this.children = null;
+    this.attributes = null;
     this.events = null;
     this.text = null;
     this.html = null;
@@ -173,13 +173,23 @@ function patch(element, current, previous) {
   }
 
   // style
-  for (let key in node.style) {
-    if (node.style[key] != oldNode.style[key]) {
+  if (node.style && oldNode.style) {
+    for (let key in node.style) {
+      if (node.style[key] != oldNode.style[key]) {
+        element.style[key] = node.style[key];
+      }
+    }
+    for (let key in oldNode.style) {
+      if (!(key in node.style)) {
+        element.style[key] = null;
+      }
+    }
+  } else if (node.style) {
+    for (let key in node.style) {
       element.style[key] = node.style[key];
     }
-  }
-  for (let key in oldNode.style) {
-    if (!(key in node.style)) {
+  } else if (oldNode.style) {
+    for (let key in oldNode.style) {
       element.style[key] = null;
     }
   }
@@ -190,16 +200,29 @@ function patch(element, current, previous) {
   }
 
   // attributes
-  for (let key in node.attributes) {
-    if (node.attributes[key] != oldNode.attributes[key]) {
+  if (node.attributes && oldNode.attributes) {
+    for (let key in node.attributes) {
+      if (node.attributes[key] != oldNode.attributes[key]) {
+        let value = node.attributes[key];
+        if (value !== undefined && value !== null) {
+          element.setAttribute(key, value);
+        }
+      }
+    }
+    for (let key in oldNode.attributes) {
+      if (!(key in node.attributes)) {
+        element.removeAttribute(key);
+      }
+    }
+  } else if (node.attributes) {
+    for (let key in node.attributes) {
       let value = node.attributes[key];
       if (value !== undefined && value !== null) {
         element.setAttribute(key, value);
       }
     }
-  }
-  for (let key in oldNode.attributes) {
-    if (!(key in node.attributes)) {
+  } else if (oldNode.attributes) {
+    for (let key in oldNode.attributes) {
       element.removeAttribute(key);
     }
   }
@@ -217,16 +240,36 @@ function patch(element, current, previous) {
   }
 
   // children
-  let max_length = node.children.length;
-  if (oldNode.children.length < max_length) {
-    max_length = oldNode.children.length;
-  }
-  let elementChildren = element.childNodes;
-  for (let i = 0; i < max_length; i++) {
-    patch(elementChildren[i], node.children[i], oldNode.children[i]);
-  }
-  if (node.children.length > max_length) {
-    for (let i = max_length, max = node.children.length; i < max; i++) {
+  if (node.children && oldNode.children) {
+    let max_length = node.children.length;
+    if (oldNode.children.length < max_length) {
+      max_length = oldNode.children.length;
+    }
+    let elementChildren = element.childNodes;
+    for (let i = 0; i < max_length; i++) {
+      patch(elementChildren[i], node.children[i], oldNode.children[i]);
+    }
+    if (node.children.length > max_length) {
+      for (let i = max_length, max = node.children.length; i < max; i++) {
+        let child = node.children[i];
+        if (child instanceof Thunk) {
+          let childElement = child.render().toElement();
+          child.element = childElement;
+          element.appendChild(childElement);
+        } else if (child instanceof Node) {
+          element.appendChild(child.toElement());
+        } else {
+          throw['invalid child type', child];
+        }
+      }
+    }
+    if (oldNode.children.length > max_length) {
+      for (let i = max_length, max = oldNode.children.length; i < max; i++) {
+        element.removeChild(elementChildren[max_length]);
+      }
+    }
+  } else if (node.children) {
+    for (let i = 0, max = node.children.length; i < max; i++) {
       let child = node.children[i];
       if (child instanceof Thunk) {
         let childElement = child.render().toElement();
@@ -235,13 +278,12 @@ function patch(element, current, previous) {
       } else if (child instanceof Node) {
         element.appendChild(child.toElement());
       } else {
-        console.error('invalid child type', child);
+        throw['invalid child type', child];
       }
     }
-  }
-  if (oldNode.children.length > max_length) {
-    for (let i = max_length, max = oldNode.children.length; i < max; i++) {
-      element.removeChild(elementChildren[max_length]);
+  } else if (oldNode.children) {
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
     }
   }
 
@@ -510,6 +552,7 @@ export function e(selector, properties, ...children) {
         node.events = node.events || {};
         node.events[key] = properties[key];
       } else {
+        node.attributes = node.attributes || {};
         node.attributes[key] = properties[key];
       }
     }
